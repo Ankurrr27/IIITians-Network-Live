@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       animation: {
-        float: "float 6s ease-in-out infinite",
+        float: "float 5s ease-in-out infinite",
         "spin-slow": "spinSlow 18s linear infinite",
         wave: "wave 3s ease-out infinite",
       },
