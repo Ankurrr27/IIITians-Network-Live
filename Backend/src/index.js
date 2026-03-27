@@ -30,7 +30,7 @@ app.use(cors({
 
     const allowedOrigins = [
       "http://localhost:5173",
-      "https://iii-tians-network-connect-fg93.vercel.app"
+      "https://iiitians-network-connect.vercel.app/"
     ];
 
     if (allowedOrigins.includes(origin)) {
