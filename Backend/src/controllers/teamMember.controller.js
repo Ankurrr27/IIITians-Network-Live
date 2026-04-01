@@ -1,9 +1,6 @@
 import TeamMember from "../models/teamMember.model.js";
 import cloudinary from "../config/cloudinary.js";
 
-/* =====================================================
-   CREATE TEAM MEMBER
-   ===================================================== */
 export const createTeamMember = async (req, res) => {
   try {
     const {
@@ -20,7 +17,6 @@ export const createTeamMember = async (req, res) => {
       order,
     } = req.body;
 
-    // 🔒 Explicit validation
     if (!roleType || !["EXEC", "LEAD", "MEMBER"].includes(roleType)) {
       return res.status(400).json({
         error: "roleType must be EXEC, LEAD, or MEMBER",
@@ -32,11 +28,6 @@ export const createTeamMember = async (req, res) => {
         error: "Profile photo is required",
       });
     }
-
-    // ☁️ Upload image
-    const upload = await cloudinary.uploader.upload(req.file.path, {
-      folder: "team-members",
-    });
 
     const member = await TeamMember.create({
       name,
@@ -51,8 +42,8 @@ export const createTeamMember = async (req, res) => {
       twitter,
       order,
       photo: {
-        public_id: upload.public_id,
-        url: upload.secure_url,
+        public_id: req.file.filename,
+        url: req.file.path,
       },
     });
 
@@ -64,9 +55,6 @@ export const createTeamMember = async (req, res) => {
   }
 };
 
-/* =====================================================
-   UPDATE TEAM MEMBER
-   ===================================================== */
 export const updateTeamMember = async (req, res) => {
   try {
     const { id } = req.params;
@@ -76,7 +64,6 @@ export const updateTeamMember = async (req, res) => {
       return res.status(404).json({ error: "Team member not found" });
     }
 
-    // 🔒 roleType validation (YOU WERE MISSING THIS)
     if (
       req.body.roleType &&
       !["EXEC", "LEAD", "MEMBER"].includes(req.body.roleType)
@@ -91,13 +78,9 @@ export const updateTeamMember = async (req, res) => {
         await cloudinary.uploader.destroy(member.photo.public_id);
       }
 
-      const upload = await cloudinary.uploader.upload(req.file.path, {
-        folder: "team-members",
-      });
-
       member.photo = {
-        public_id: upload.public_id,
-        url: upload.secure_url,
+        public_id: req.file.filename,
+        url: req.file.path,
       };
     }
 
@@ -132,10 +115,6 @@ export const updateTeamMember = async (req, res) => {
   }
 };
 
-
-/* =====================================================
-   DELETE TEAM MEMBER
-   ===================================================== */
 export const deleteTeamMember = async (req, res) => {
   try {
     const { id } = req.params;
@@ -156,9 +135,6 @@ export const deleteTeamMember = async (req, res) => {
   }
 };
 
-/* =====================================================
-   GET TEAM MEMBERS (FILTERABLE)
-   ===================================================== */
 export const getTeamMembers = async (req, res) => {
   try {
     const { year, team, active } = req.query;
@@ -168,8 +144,7 @@ export const getTeamMembers = async (req, res) => {
     if (team) filter.team = team;
     if (active !== undefined) filter.isActive = active === "true";
 
-    const members = await TeamMember.find(filter)
-      .sort({ order: 1, createdAt: 1 });
+    const members = await TeamMember.find(filter).sort({ order: 1, createdAt: 1 });
 
     res.json(members);
   } catch {
@@ -177,9 +152,6 @@ export const getTeamMembers = async (req, res) => {
   }
 };
 
-/* =====================================================
-   GET SINGLE TEAM MEMBER
-   ===================================================== */
 export const getTeamMemberById = async (req, res) => {
   try {
     const member = await TeamMember.findById(req.params.id);

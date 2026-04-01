@@ -5,19 +5,38 @@ import jwt from "jsonwebtoken";
 // CREATE ADMIN (use once, then disable)
 export const createAdmin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, setupKey } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
 
-    if (!email || !password)
+    if (!normalizedEmail || !password)
       return res.status(400).json({ message: "Email & password required" });
 
-    const exists = await Admin.findOne({ email });
+    const adminsCount = await Admin.countDocuments();
+    const providedSetupKey = req.headers["x-admin-setup-key"] || setupKey;
+
+    if (
+      adminsCount > 0 &&
+      (!process.env.ADMIN_SETUP_KEY || providedSetupKey !== process.env.ADMIN_SETUP_KEY)
+    ) {
+      return res.status(403).json({
+        message: "Admin creation is disabled",
+      });
+    }
+
+    if (process.env.ADMIN_SETUP_KEY && providedSetupKey !== process.env.ADMIN_SETUP_KEY) {
+      return res.status(403).json({
+        message: "Valid setup key required",
+      });
+    }
+
+    const exists = await Admin.findOne({ email: normalizedEmail });
     if (exists)
       return res.status(409).json({ message: "Admin already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const admin = await Admin.create({
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
     });
 
@@ -38,11 +57,12 @@ export const createAdmin = async (req, res) => {
 export const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
 
-    if (!email || !password)
+    if (!normalizedEmail || !password)
       return res.status(400).json({ message: "Email & password required" });
 
-    const admin = await Admin.findOne({ email });
+    const admin = await Admin.findOne({ email: normalizedEmail });
     if (!admin)
       return res.status(401).json({ message: "Invalid credentials" });
 
