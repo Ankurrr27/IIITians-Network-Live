@@ -42,16 +42,16 @@ function App() {
   return (
     <>
       <Navigation />
+      <ScrollToTop />
 
       <AnimatePresence mode="wait">
-        <ScrollToTop/>
         <Routes location={location} key={location.pathname}>
           {/* PUBLIC ROUTES */}
-           <Route path="/alumni" element={<Alumni />} />
           <Route path="/" element={<Index />} />
           <Route path="/colleges" element={<Colleges />} />
           <Route path="/events" element={<PublicEvents />} />
           <Route path="/placement" element={<Placement />} />
+          <Route path="/alumni" element={<Alumni />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/contact" element={<ContactPage />} />
 

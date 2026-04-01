@@ -3,37 +3,39 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import logoBlue from "/IIITians-Network-Logo-Blue.png";
 import logoLight from "/IIITians-Network-Logo-Light.png";
+import ThemeToggle from "./ThemeToggle";
+import useThemeMode from "../hooks/useThemeMode.jsx";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { isDarkMode, toggleThemeMode } = useThemeMode();
 
   const location = useLocation();
   const navigate = useNavigate();
-
-  // 🔐 Admin auth state
-  const isAdminLoggedIn = !!localStorage.getItem("adminToken");
 
   const navItems = [
     { name: "Home", href: "#home" },
     { name: "Colleges", href: "/colleges" },
     { name: "Events", href: "/events" },
     { name: "IIIT Placements", href: "/placement" },
+    { name: "Alumni", href: "/alumni" },
     { name: "Our Team", href: "/team" },
     { name: "Contact", href: "/contact" },
   ];
 
-  /* 🔒 Close menu on route change */
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname]);
 
-  /* 🧠 Disable scroll when sidebar open */
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "auto";
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
   }, [isOpen]);
 
-  /* Scroll logic */
   useEffect(() => {
     const handleScroll = () => {
       const hero = document.getElementById("hero");
@@ -41,6 +43,7 @@ const Navigation = () => {
         setIsScrolled(window.scrollY > 10);
         return;
       }
+
       setIsScrolled(hero.getBoundingClientRect().bottom <= 80);
     };
 
@@ -49,8 +52,8 @@ const Navigation = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleNavClick = (e, href) => {
-    e.preventDefault();
+  const handleNavClick = (event, href) => {
+    event.preventDefault();
     setIsOpen(false);
 
     if (href.startsWith("#")) {
@@ -58,160 +61,153 @@ const Navigation = () => {
         navigate("/");
         return;
       }
-      const el = document.getElementById(href.slice(1));
-      if (el) {
+
+      const target = document.getElementById(href.slice(1));
+      if (target) {
         window.scrollTo({
-          top: el.offsetTop - 80,
+          top: target.offsetTop - 80,
           behavior: "smooth",
         });
       }
-    } else {
-      navigate(href);
+
+      return;
     }
+
+    navigate(href);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    navigate("/", { replace: true });
-  };
+  const isSolidNav = isDarkMode || isScrolled;
 
   return (
     <>
-      {/* NAVBAR */}
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all ${
-          isScrolled
-            ? "bg-white/80 backdrop-blur-md border-b shadow py-2"
+          isSolidNav
+            ? isDarkMode
+              ? "border-b border-slate-800 bg-slate-950/92 py-2 shadow-[0_10px_40px_rgba(15,23,42,0.3)] backdrop-blur-md"
+              : "border-b border-slate-200 bg-white/88 py-2 shadow-[0_10px_40px_rgba(15,23,42,0.08)] backdrop-blur-md"
             : "bg-indigo-600 py-4"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-          {/* LOGO */}
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6">
           <a href="/" className="flex items-center gap-3">
             <img
-              src={isScrolled ? logoBlue : logoLight}
-              className="w-14 h-auto"
+              src={isSolidNav ? logoBlue : logoLight}
+              className="h-auto w-14"
               alt="IIITians Network"
             />
             <span
-              className={`hidden sm:inline font-semibold ${
-                isScrolled ? "text-indigo-600" : "text-white"
+              className={`hidden font-semibold sm:inline ${
+                isDarkMode
+                  ? "text-slate-100"
+                  : isSolidNav
+                    ? "text-indigo-600"
+                    : "text-white"
               }`}
             >
               IIITians Network
             </span>
           </a>
 
-          {/* DESKTOP NAV */}
-          <div className="hidden md:flex gap-6 items-center">
+          <div className="hidden items-center gap-4 md:flex">
             {navItems.map((item) => (
               <a
                 key={item.name}
                 href={item.href}
-                onClick={(e) => handleNavClick(e, item.href)}
-                className={`relative text-sm font-medium
-  after:absolute after:left-0 after:-bottom-1
-  after:h-[2px] after:w-full after:scale-x-0
-  after:origin-center after:transition-transform after:duration-300
-  hover:after:scale-x-100
-  ${isScrolled ? "text-indigo-600 after:bg-indigo-600" : "text-white after:bg-white"}
-`}
-
+                onClick={(event) => handleNavClick(event, item.href)}
+                className={`relative text-sm font-medium transition-colors after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-full after:origin-center after:scale-x-0 after:transition-transform after:duration-300 hover:after:scale-x-100 ${
+                  isDarkMode
+                    ? "text-slate-200 after:bg-indigo-400 hover:text-white"
+                    : isSolidNav
+                      ? "text-slate-700 after:bg-indigo-600 hover:text-indigo-600"
+                      : "text-slate-100 after:bg-white hover:text-white"
+                }`}
               >
                 {item.name}
               </a>
             ))}
 
-            {/* ADMIN LOGIN / LOGOUT */}
-            {isAdminLoggedIn ? (
-              <button
-                onClick={handleLogout}
-                className={`text-sm font-medium ${
-                  isScrolled ? "text-red-600" : "text-white"
-                }`}
-              >
-                Logout
-              </button>
-            ) : (
-              <button
-                onClick={() => navigate("/admin")}
-                className={`text-sm font-medium ${
-                  isScrolled ? "text-indigo-600" : "text-white"
-                }`}
-              >
-                Admin Login
-              </button>
-            )}
+            <ThemeToggle
+              isDarkMode={isDarkMode}
+              onToggle={toggleThemeMode}
+              className={
+                isDarkMode
+                  ? "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800"
+                  : isSolidNav
+                    ? "border-indigo-100 bg-white text-indigo-600 hover:bg-indigo-50"
+                    : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              }
+            />
           </div>
 
-          {/* MOBILE TOGGLE */}
-          <button
-            onClick={() => setIsOpen(true)}
-            className="md:hidden"
-          >
+          <button onClick={() => setIsOpen(true)} className="md:hidden">
             <Menu
-              className={`w-6 h-6 ${
-                isScrolled ? "text-indigo-600" : "text-white"
+              className={`h-6 w-6 ${
+                isDarkMode
+                  ? "text-slate-100"
+                  : isSolidNav
+                    ? "text-indigo-600"
+                    : "text-white"
               }`}
             />
           </button>
         </div>
       </nav>
 
-      {/* BACKDROP */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-40"
+          className="fixed inset-0 z-40 bg-slate-950/40"
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* MOBILE SIDEBAR */}
       <aside
-        className={`
-          fixed top-0 right-0 h-full w-44 bg-white z-50
-          transform transition-transform duration-300
-          ${isOpen ? "translate-x-0" : "translate-x-full"}
-        `}
+        className={`fixed top-0 right-0 z-50 h-full w-72 transform shadow-2xl transition-transform duration-300 ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        } ${isDarkMode ? "bg-slate-950 text-slate-100" : "bg-white"}`}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b">
-          <span className="font-semibold text-indigo-600">Menu</span>
+        <div
+          className={`flex items-center justify-between px-5 py-4 ${
+            isDarkMode ? "border-b border-slate-800" : "border-b border-slate-200"
+          }`}
+        >
+          <span
+            className={`font-semibold ${
+              isDarkMode ? "text-slate-100" : "text-indigo-600"
+            }`}
+          >
+            Menu
+          </span>
           <button onClick={() => setIsOpen(false)}>
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex flex-col p-4 gap-2">
+        <div className="flex flex-col gap-2 p-4">
+          <ThemeToggle
+            isDarkMode={isDarkMode}
+            onToggle={toggleThemeMode}
+            className={
+              isDarkMode
+                ? "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800"
+                : "border-indigo-100 bg-white text-indigo-600 hover:bg-indigo-50"
+            }
+          />
+
           {navItems.map((item) => (
             <a
               key={item.name}
               href={item.href}
-              onClick={(e) => handleNavClick(e, item.href)}
-              className="px-4 py-3 rounded-lg text-indigo-600 font-medium hover:bg-indigo-50"
+              onClick={(event) => handleNavClick(event, item.href)}
+              className={`rounded-xl px-4 py-3 font-medium transition ${
+                isDarkMode
+                  ? "text-slate-100 hover:bg-slate-900"
+                  : "text-indigo-600 hover:bg-indigo-50"
+              }`}
             >
               {item.name}
             </a>
           ))}
-
-          {/* ADMIN LOGIN / LOGOUT (MOBILE) */}
-          {isAdminLoggedIn ? (
-            <button
-              onClick={handleLogout}
-              className="mt-4 px-4 py-3 rounded-lg text-red-600 font-medium hover:bg-red-50 text-left"
-            >
-              Logout
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                navigate("/admin");
-              }}
-              className="mt-4 px-4 py-3 rounded-lg text-indigo-600 font-medium hover:bg-indigo-50 text-left"
-            >
-              Admin Login
-            </button>
-          )}
         </div>
       </aside>
     </>
